@@ -2,6 +2,11 @@ This is an SELinux policy I've developed for Splunk on CentOS 6 as part of "The 
 
 context="system_u:object_r:splunk_rw_t:s0"
 
+Should you mount a filesystem for index buckets outside of /opt/splunk, then be sure to assign the splunk_rw_t file type to that path. For example:
+
+1. semanage fcontext -a -t splunk_rw_t '/data(/.*)?'
+2. restorecon -R /data
+
 I would strongly recommend you run this policy with the splunk_t domain in permissive (as per step 4 below), until you're confident it works correctly.
 
 How to use this policy:
