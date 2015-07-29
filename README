@@ -10,13 +10,14 @@ Should you mount a filesystem for index buckets outside of /opt/splunk, then be 
 I would strongly recommend you run this policy with the splunk_t domain in permissive (as per step 4 below), until you're confident it works correctly.
 
 How to use this policy:
-1. yum install policycoreutils-python setools-console setools-devel
-2. make -f /usr/share/selinux/devel/Makefile
-3. semodule -i splunk.pp
-4. semanage permissive -a splunk_t
-5. restorecon -R /opt/splunk
-6. restorecon /etc/init.d/splunk
-7. service splunk restart
+1. Download/upload this policy to your server (and extract the zip - if not using a git clone), then 'cd' into the directory
+2. yum install policycoreutils-python setools-console
+3. make -f /usr/share/selinux/devel/Makefile
+4. semodule -i splunk.pp
+5. semanage permissive -a splunk_t
+6. restorecon -R /opt/splunk
+7. restorecon /etc/init.d/splunk
+8. service splunk restart
 
 Confirm Splunk is running in the splunk_t domain by running: ps -auxZ | grep splunk
 
