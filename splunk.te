@@ -1,4 +1,4 @@
-policy_module(splunk, 1.0.0)
+policy_module(splunk, 2.0.0)
 
 gen_require(`
     attribute systemprocess;
@@ -8,6 +8,10 @@ gen_require(`
     attribute device_node;
     attribute domain;
     class process { signull };
+
+    # For RHEL 7 Only:
+    #class capability2 block_suspend;
+
 ')
 
 ########################################
@@ -33,7 +37,7 @@ files_type(splunk_rw_t)
 
 ########################################
 #
-# splunk local policy
+# splunk type policy
 #
 
 ## process
@@ -46,6 +50,9 @@ allow splunk_t self:dir { write remove_name add_name };
 allow splunk_t self:file { execute unlink create execute_no_trans };
 allow splunk_t splunk_rw_t:fifo_file manage_fifo_file_perms;
 allow splunk_t self:capability { sys_resource dac_override sys_ptrace kill };
+
+# For RHEL 7 Only:
+#allow splunk_t self:capability2 block_suspend;
 
 manage_dirs_pattern(splunk_t, splunk_tmp_t, splunk_tmp_t)
 manage_files_pattern(splunk_t, splunk_tmp_t, splunk_tmp_t)
@@ -96,6 +103,8 @@ allow splunk_t domain : file exec_file_perms;
 allow splunk_t file_type : dir list_dir_perms;
 allow splunk_t domain : dir list_dir_perms;
 
+read_lnk_files_pattern(splunk_t, file_type, file_type)
+
 allow splunk_t domain : process { getattr signull };
 
 allow splunk_t port_type : socket_class_set getattr;
@@ -120,3 +129,45 @@ dev_read_urand(splunk_t)
 fs_manage_tmpfs_dirs(splunk_t)
 fs_manage_tmpfs_files(splunk_t)
 userdom_rw_inherited_user_tmpfs_files(splunk_t)
+
+########################################
+#
+# splunk admin role policy
+#
+
+# create splunk admin role
+role splunkadm_r;
+
+# create splunk admin user environment
+userdom_base_user_template(splunkadm)
+
+# allow splunk admin to execute core commands
+corecmd_exec_bin(splunkadm_t)
+
+# allow splunk admin to use a shell
+corecmd_exec_shell(splunkadm_t)
+
+# allow splunk admin to use sudo
+sudo_role_template(splunkadm, splunkadm_r, splunkadm_t)
+
+# allow splunk admin to know their SELinux context
+selinux_getattr_fs(splunkadm_t)
+
+# allow splunk admin to administer Splunk
+optional_policy(`
+        splunk_admin(splunkadm_t, splunkadm_r)
+')
+
+# allow other roles to transition to splunk admin role
+gen_require(`
+        role staff_r;
+	role unconfined_r;
+')
+allow staff_r splunkadm_r;
+allow unconfined_r splunkadm_r;
+
+# allow splunk admin to override DAC
+allow splunkadm_t self:capability { dac_override dac_read_search };
+
+# allow splunk admin to access proc
+kernel_read_system_state(splunkadm_t)

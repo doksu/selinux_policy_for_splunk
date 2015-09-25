@@ -1,0 +1,183 @@
+## <summary>SELinux policy for splunk</summary>
+
+########################################
+## <summary>
+##	Execute TEMPLATE in the splunk domain.
+## </summary>
+## <param name="domain">
+## <summary>
+##	Domain allowed to transition.
+## </summary>
+## </param>
+#
+interface(`splunk_domtrans',`
+	gen_require(`
+		type splunk_t, splunk_exec_t;
+	')
+
+	corecmd_search_bin($1)
+	domtrans_pattern($1, splunk_exec_t, splunk_t)
+')
+
+########################################
+## <summary>
+##	Execute splunk server in the splunk domain.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`splunk_initrc_domtrans',`
+	gen_require(`
+		type splunk_initrc_exec_t;
+	')
+
+	init_labeled_script_domtrans($1, splunk_initrc_exec_t)
+')
+
+########################################
+## <summary>
+##	Search splunk directories.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`splunk_search_dir',`
+	gen_require(`
+		type splunk_t;
+		type splunk_rw_t;
+		type splunk_exec_t;
+	')
+
+	allow $1 splunk_t:dir search_dir_perms;
+	allow $1 splunk_rw_t:dir search_dir_perms;
+	allow $1 splunk_exec_t:dir search_dir_perms;
+	files_search_rw($1)
+')
+
+########################################
+## <summary>
+##	Read splunk files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`splunk_read_files',`
+	gen_require(`
+		type splunk_t;
+		type splunk_rw_t;
+		type splunk_exec_t;
+		type splunk_initrc_exec_t;
+	')
+
+	read_files_pattern($1, splunk_t, splunk_t)
+	read_files_pattern($1, splunk_rw_t, splunk_rw_t)
+	read_files_pattern($1, splunk_exec_t, splunk_exec_t)
+	read_files_pattern($1, splunk_initrc_exec_t, splunk_initrc_exec_t)
+	allow $1 splunk_t:dir list_dir_perms;
+	allow $1 splunk_rw_t:dir list_dir_perms;
+	allow $1 splunk_exec_t:dir list_dir_perms;
+	files_search_rw($1)
+')
+
+########################################
+## <summary>
+##	Manage splunk files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`splunk_manage_files',`
+	gen_require(`
+		type splunk_t;
+		type splunk_rw_t;
+		type splunk_exec_t;
+		type splunk_initrc_exec_t;
+	')
+
+	manage_files_pattern($1, splunk_t, splunk_t)
+	manage_files_pattern($1, splunk_rw_t, splunk_rw_t)
+	manage_files_pattern($1, splunk_exec_t, splunk_exec_t)
+	manage_files_pattern($1, splunk_initrc_exec_t, splunk_initrc_exec_t)
+')
+
+########################################
+## <summary>
+##	Create, read, write, and delete
+##	splunk dirs.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`splunk_manage_dirs',`
+	gen_require(`
+		type splunk_t;
+		type splunk_rw_t;
+		type splunk_exec_t;
+	')
+
+	manage_dirs_pattern($1, splunk_t, splunk_t)
+	manage_dirs_pattern($1, splunk_rw_t, splunk_rw_t)
+	manage_dirs_pattern($1, splunk_exec_t, splunk_exec_t)
+')
+
+########################################
+## <summary>
+##	All of the rules required to administer
+##	a splunk environment
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+## <param name="role">
+##	<summary>
+##	Role allowed access.
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`splunk_admin',`
+	gen_require(`
+		type splunk_t;
+		type splunk_rw_t;
+		type splunk_exec_t;
+		type splunk_initrc_exec_t;
+	')
+
+	allow $1 splunk_t:process { ptrace signal_perms };
+	ps_process_pattern($1, splunk_t)
+
+	splunk_initrc_domtrans($1)
+	domain_system_change_exemption($1)
+	role_transition $2 splunk_initrc_exec_t system_r;
+	allow $2 system_r;
+
+	files_search_etc($1)
+	exec_files_pattern($1, splunk_t, splunk_t)
+	exec_files_pattern($1, splunk_exec_t, splunk_exec_t)
+	admin_pattern($1, splunk_t)
+	admin_pattern($1, splunk_rw_t)
+	admin_pattern($1, splunk_exec_t)
+	manage_files_pattern($1, splunk_initrc_exec_t, splunk_initrc_exec_t)
+#	Uncomment the rules below for RHEL7:
+#	optional_policy(`
+#		systemd_passwd_agent_exec($1)
+#		systemd_read_fifo_file_passwd_run($1)
+#	')
+')

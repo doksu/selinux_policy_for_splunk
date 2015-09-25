@@ -1,4 +1,4 @@
-/opt/splunk(forwarder)?/bin(/.*)?  --  gen_context(system_u:object_r:splunk_exec_t,s0)
+/opt/splunk(forwarder)?/bin(/.*)?    gen_context(system_u:object_r:splunk_exec_t,s0)
 
 /opt/splunk(forwarder)?/lib(/.*)?    gen_context(system_u:object_r:splunk_t,s0)
 
