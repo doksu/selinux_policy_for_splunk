@@ -26,5 +26,3 @@ You can confirm Splunk is running in the splunk_t domain by running: ps -auxZ | 
 Don't forget to use the Linux Auditd app for Splunk to better understand SELinux audit events: https://splunkbase.splunk.com/app/2642/
 
 If you find any denied access vectors using this policy, be sure to let me know so that I can update as necessary.
-
-Watch this space, interface macros for RBACs and updates for RHEL 7 are coming shortly.
