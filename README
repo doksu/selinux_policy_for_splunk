@@ -32,7 +32,7 @@ If you find any denied access vectors using this policy, be sure to let me know 
 
 In a PaaS environment, you can use this SELinux policy to easily apply RBACs, delegating only the permissions required to manage the Splunk service as root. Assuming you have a posix group called 'splunk_admins':
 
-[root@localhost ~]# semanage login -a staff_r %splunk_admins
+[root@localhost ~]# semanage login -a -s staff_u %splunk_admins
 [root@localhost ~]# semanage user -m -r "s0" -R "staff_r splunkadm_r system_r" staff_u
 [root@localhost ~]# restorecon -RFv /home
 
