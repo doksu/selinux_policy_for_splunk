@@ -1,4 +1,4 @@
-This is an SELinux policy I've developed for Splunk on CentOS/RHEL 6 as part of "The Audit Experiment" (https://github.com/doksu/splunk_auditd/wiki/The-Audit-Experiment), and will continue to undergo minor refinements. As with any SELinux policy, it allows Splunk to do what it was designed to do: collect, index and search information. The policy essentially allows Splunk to read just about anything on the system and free reign in terms of networking (Splunk's network communication should be confined with iptables not SELinux, as Splunk has too many port permutations to make TE suitable). This policy does however prevent Splunk from writing to almost all file types. If using NFS shares, mount them in fstab with the following argument:
+This is an SELinux policy I've developed for Splunk on RHEL/CentOS as part of "The Audit Experiment" (https://github.com/doksu/splunk_auditd/wiki/The-Audit-Experiment), and will continue to undergo minor refinements. As with any SELinux policy, it allows Splunk to do what it was designed to do: collect, index and search information. The policy essentially allows Splunk to read just about anything on the system and free reign in terms of networking (Splunk's network communication should be confined with iptables not SELinux, as Splunk has too many port permutations to make TE suitable). This policy does however prevent Splunk from writing to almost all file types. If using NFS shares, mount them in fstab with the following argument:
 
 context="system_u:object_r:splunk_rw_t:s0"
 
@@ -21,10 +21,8 @@ How to use this policy:
 
 It would also be prudent to also add the sixth command above to Splunk's service script (/etc/init.d/splunk), so you can be confident the labels of files in /opt/splunk are always correct before the service is started/restarted. For example, let's say you install a new app by copying it from /tmp to /opt/splunk/etc/apps, but forget to restorecon the files; the app would have the type label "user_tmp_t", and therefore Splunk would be unable to write to it.
 
-You can confirm Splunk is running in the splunk_t domain by running: ps -auxZ | grep splunk
+You can confirm Splunk is running in the splunk_t domain by running: ps -eZ | grep splunk
 
 Don't forget to use the Linux Auditd app for Splunk to better understand SELinux audit events: https://splunkbase.splunk.com/app/2642/
 
 If you find any denied access vectors using this policy, be sure to let me know so that I can update as necessary.
-
-Watch this space, interface macros for RBACs and updates for RHEL 7 are coming shortly.

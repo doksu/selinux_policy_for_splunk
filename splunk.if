@@ -175,9 +175,10 @@ interface(`splunk_admin',`
 	admin_pattern($1, splunk_rw_t)
 	admin_pattern($1, splunk_exec_t)
 	manage_files_pattern($1, splunk_initrc_exec_t, splunk_initrc_exec_t)
-#	Uncomment the rules below for RHEL7:
-#	optional_policy(`
-#		systemd_passwd_agent_exec($1)
-#		systemd_read_fifo_file_passwd_run($1)
-#	')
+	ifdef(`distro_rhel7',`
+		optional_policy(`
+			systemd_passwd_agent_exec($1)
+			systemd_read_fifo_file_passwd_run($1)
+		')
+	')
 ')

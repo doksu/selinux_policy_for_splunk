@@ -1,17 +1,14 @@
-policy_module(splunk, 2.0.0)
+policy_module(splunk, 2.0.1)
 
 gen_require(`
     attribute systemprocess;
     attribute file_type;
     attribute port_type;
     attribute node_type;
+    attribute filesystem_type;
     attribute device_node;
     attribute domain;
     class process { signull };
-
-    # For RHEL 7 Only:
-    #class capability2 block_suspend;
-
 ')
 
 ########################################
@@ -51,8 +48,14 @@ allow splunk_t self:file { execute unlink create execute_no_trans };
 allow splunk_t splunk_rw_t:fifo_file manage_fifo_file_perms;
 allow splunk_t self:capability { sys_resource dac_override sys_ptrace kill };
 
-# For RHEL 7 Only:
-#allow splunk_t self:capability2 block_suspend;
+ifdef(`distro_rhel7',`
+
+	gen_require(`
+		class capability2 block_suspend;
+	')
+
+	allow splunk_t self:capability2 block_suspend;
+')
 
 manage_dirs_pattern(splunk_t, splunk_tmp_t, splunk_tmp_t)
 manage_files_pattern(splunk_t, splunk_tmp_t, splunk_tmp_t)
@@ -63,7 +66,7 @@ manage_files_pattern(splunk_t, splunk_rw_t, splunk_rw_t)
 manage_dirs_pattern(splunk_t, splunk_rw_t, splunk_rw_t)
 manage_lnk_files_pattern(splunk_t, splunk_rw_t, splunk_rw_t)
 
-consoletype_exec(splunk_t)
+#consoletype_exec(splunk_t)
 corecmd_exec_bin(splunk_t)
 corecmd_exec_shell(splunk_t)
 
@@ -109,6 +112,8 @@ allow splunk_t domain : process { getattr signull };
 
 allow splunk_t port_type : socket_class_set getattr;
 allow splunk_t node_type : socket_class_set getattr;
+
+allow splunk_t filesystem_type : dir_file_class_set getattr;
 
 allow splunk_t domain : socket_class_set getattr;
 
