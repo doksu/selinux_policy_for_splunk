@@ -7,19 +7,21 @@ Should you mount a filesystem for index buckets outside of /opt/splunk, then be 
 1. semanage fcontext -a -t splunk_rw_t '/data(/.*)?'
 2. restorecon -R /data
 
-I would strongly recommend you run this policy with the splunk_t domain in permissive (as per step 4 below), until you're confident it works correctly.
+I would strongly recommend you run this policy with the splunk_t domain in permissive (as per step 7 below), until you're confident it works correctly.
 
 How to use this policy:
 1. Download/upload this policy to your server (and extract the zip - if not using a git clone), then 'cd' into the directory
 2. yum install policycoreutils-python setools-console
-3. make -f /usr/share/selinux/devel/Makefile
-4. semodule -i splunk.pp
-5. semanage permissive -a splunk_t
-6. restorecon -R /opt/splunk
-7. restorecon /etc/init.d/splunk
-8. service splunk restart
+3. If using RHEL 7, uncomment all additional rules in splunk.te and splunk.if files
+4. cp splunk.if /usr/share/selinux/devel/include/services/
+5. make -f /usr/share/selinux/devel/Makefile
+6. semodule -i splunk.pp
+7. semanage permissive -a splunk_t
+8. restorecon -R /opt/splunk
+9. restorecon /etc/init.d/splunk
+10. /etc/init.d/splunk restart
 
-It would also be prudent to also add the sixth command above to Splunk's service script (/etc/init.d/splunk), so you can be confident the labels of files in /opt/splunk are always correct before the service is started/restarted. For example, let's say you install a new app by copying it from /tmp to /opt/splunk/etc/apps, but forget to restorecon the files; the app would have the type label "user_tmp_t", and therefore Splunk would be unable to write to it.
+It would also be prudent to also add the eighth command above to Splunk's service script (/etc/init.d/splunk), so you can be confident the labels of files in /opt/splunk are always correct before the service is started/restarted. For example, let's say you install a new app by copying it from /tmp to /opt/splunk/etc/apps, but forget to restorecon the files; the app would have the type label "user_tmp_t", and therefore Splunk would be unable to write to it.
 
 You can confirm Splunk is running in the splunk_t domain by running: ps -eZ | grep splunk
 
