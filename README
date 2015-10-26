@@ -1,4 +1,4 @@
-This is an SELinux policy I've developed for Splunk on RHEL/CentOS as part of "The Audit Experiment" (https://github.com/doksu/splunk_auditd/wiki/The-Audit-Experiment), and will continue to undergo minor refinements. As with any SELinux policy, it allows Splunk to do what it was designed to do: collect, index and search information. The policy essentially allows Splunk to read just about anything on the system and free reign in terms of networking (Splunk's network communication should be confined with iptables not SELinux, as Splunk has too many port permutations to make TE suitable). This policy does however prevent Splunk from writing to almost all file types. If using NFS shares, mount them in fstab with the following argument:
+All the complexities and workarounds associated with not running Splunk as root can be avoided by simply running it as root but securely using this SELinux policy I've developed for RHEL/CentOS. As with any SELinux policy, it allows Splunk to do what it was designed to do: collect, index and search information. The policy essentially allows Splunk to read just about anything on the system and free reign in terms of networking (Splunk's network communication should be confined with iptables not SELinux, as Splunk has too many port permutations to make TE suitable). This policy does however prevent Splunk from writing to almost all file types. If using NFS shares, mount them in fstab with the following argument:
 
 context="system_u:object_r:splunk_rw_t:s0"
 
@@ -7,24 +7,50 @@ Should you mount a filesystem for index buckets outside of /opt/splunk, then be 
 1. semanage fcontext -a -t splunk_rw_t '/data(/.*)?'
 2. restorecon -R /data
 
-I would strongly recommend you run this policy with the splunk_t domain in permissive (as per step 7 below), until you're confident it works correctly.
+I would strongly recommend you run this policy with the splunk_t domain in permissive (as per step 6 below), until you're confident it works correctly.
 
 How to use this policy:
 1. Download/upload this policy to your server (and extract the zip - if not using a git clone), then 'cd' into the directory
 2. yum install policycoreutils-python setools-console
-3. If using RHEL 7, uncomment all additional rules in splunk.te and splunk.if files
-4. cp splunk.if /usr/share/selinux/devel/include/services/
-5. make -f /usr/share/selinux/devel/Makefile
-6. semodule -i splunk.pp
-7. semanage permissive -a splunk_t
-8. restorecon -R /opt/splunk
-9. restorecon /etc/init.d/splunk
-10. /etc/init.d/splunk restart
+3. cp splunk.if /usr/share/selinux/devel/include/services/
+4. make -f /usr/share/selinux/devel/Makefile
+5. semodule -i splunk.pp
+6. semanage permissive -a splunk_t
+7. restorecon -R /opt/splunk
+8. restorecon /etc/init.d/splunk
+9. /etc/init.d/splunk restart
 
-It would also be prudent to also add the eighth command above to Splunk's service script (/etc/init.d/splunk), so you can be confident the labels of files in /opt/splunk are always correct before the service is started/restarted. For example, let's say you install a new app by copying it from /tmp to /opt/splunk/etc/apps, but forget to restorecon the files; the app would have the type label "user_tmp_t", and therefore Splunk would be unable to write to it.
+It would also be prudent to also add the seventh command above to Splunk's service script (/etc/init.d/splunk), so you can be confident the labels of files in /opt/splunk are always correct before the service is started/restarted. For example, let's say you install a new app by copying it from /tmp to /opt/splunk/etc/apps, but forget to restorecon the files; the app would have the type label "user_tmp_t", and therefore Splunk would be unable to write to it.
 
 You can confirm Splunk is running in the splunk_t domain by running: ps -eZ | grep splunk
 
 Don't forget to use the Linux Auditd app for Splunk to better understand SELinux audit events: https://splunkbase.splunk.com/app/2642/
 
 If you find any denied access vectors using this policy, be sure to let me know so that I can update as necessary.
+
+## Role-based Access Controls (RBACs)
+
+In a PaaS environment, you can use this SELinux policy to easily apply RBACs, delegating only the permissions required to manage the Splunk service as root. Assuming you have a posix group called 'splunk_admins':
+
+[root@localhost ~]# semanage login -a staff_r %splunk_admins
+[root@localhost ~]# semanage user -m -r "s0" -R "staff_r splunkadm_r system_r" staff_u
+[root@localhost ~]# restorecon -RFv /home
+
+[root@localhost ~]# cat <<'EOF' > /etc/selinux/targeted/contexts/users/staff_u
+system_r:local_login_t:s0 staff_r:staff_t:s0 sysadm_r:sysadm_t:s0
+system_r:remote_login_t:s0 staff_r:staff_t:s0
+system_r:sshd_t:s0 staff_r:staff_t:s0 sysadm_r:sysadm_t:s0
+system_r:crond_t:s0 staff_r:staff_t:s0
+system_r:xdm_t:s0 staff_r:staff_t:s0
+staff_r:staff_su_t:s0 staff_r:staff_t:s0
+staff_r:staff_sudo_t:s0 staff_r:staff_t:s0 splunkadm_r:splunkadm_t:s0
+system_r:initrc_su_t:s0 staff_r:staff_t:s0
+staff_r:staff_t:s0 staff_r:staff_t:s0
+sysadm_r:sysadm_su_t:s0 sysadm_r:sysadm_t:s0
+sysadm_r:sysadm_sudo_t:s0 sysadm_r:sysadm_t:s0
+EOF
+
+[root@localhost ~]# echo 'splunkadm_r:splunkadm_t' >> /etc/selinux/targeted/contexts/default_type
+[root@localhost ~]# echo '%splunk_admins ALL=(ALL) TYPE=splunkadm_t ROLE=splunkadm_r ALL' > /etc/sudoers.d/rbacs
+
+Splunk administrators can then simply run `sudo -i` and administer Splunk.
