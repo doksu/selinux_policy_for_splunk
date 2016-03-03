@@ -11,7 +11,7 @@ I would strongly recommend you run this policy with the splunk_t domain in permi
 
 How to use this policy:
 1. Download/upload this policy to your server (and extract the zip - if not using a git clone), then 'cd' into the directory
-2. yum install policycoreutils-python setools-console
+2. yum install policycoreutils-python setools-console selinux-policy-devel
 3. cp splunk.if /usr/share/selinux/devel/include/services/
 4. make -f /usr/share/selinux/devel/Makefile
 5. semodule -i splunk.pp

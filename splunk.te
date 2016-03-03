@@ -66,8 +66,9 @@ manage_files_pattern(splunk_t, splunk_rw_t, splunk_rw_t)
 manage_dirs_pattern(splunk_t, splunk_rw_t, splunk_rw_t)
 manage_lnk_files_pattern(splunk_t, splunk_rw_t, splunk_rw_t)
 
-# For RHEL 7, comment out the line below:
-consoletype_exec(splunk_t)
+ifdef(`distro_rhel6',`
+	consoletype_exec(splunk_t)
+')
 
 corecmd_exec_bin(splunk_t)
 corecmd_exec_shell(splunk_t)
