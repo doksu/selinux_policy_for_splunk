@@ -66,7 +66,7 @@ manage_files_pattern(splunk_t, splunk_rw_t, splunk_rw_t)
 manage_dirs_pattern(splunk_t, splunk_rw_t, splunk_rw_t)
 manage_lnk_files_pattern(splunk_t, splunk_rw_t, splunk_rw_t)
 
-ifdef(`distro_rhel6',`
+ifndef(`distro_rhel7',`
 	consoletype_exec(splunk_t)
 ')
 
