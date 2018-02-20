@@ -136,7 +136,7 @@ selinux_get_enforce_mode(splunk_t)
 dev_read_urand(splunk_t)
 fs_manage_tmpfs_dirs(splunk_t)
 fs_manage_tmpfs_files(splunk_t)
-userdom_rw_inherited_user_tmpfs_files(splunk_t)
+userdom_rw_inherited_user_tmp_files(splunk_t)
 
 ########################################
 #
